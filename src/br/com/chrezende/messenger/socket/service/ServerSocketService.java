@@ -1,4 +1,4 @@
-package br.com.chrezende.messenger;
+package br.com.chrezende.messenger.socket.service;
 
 import java.io.BufferedReader;
 import java.io.IOException;
@@ -8,6 +8,10 @@ import java.net.ServerSocket;
 import java.net.Socket;
 import java.time.LocalDateTime;
 
+import org.apache.commons.lang3.StringUtils;
+
+import br.com.chrezende.messenger.controller.alert.AlertException;
+import br.com.chrezende.messenger.controller.alert.AlertSuccess;
 import br.com.chrezende.messenger.model.entity.Message;
 
 public class ServerSocketService {
@@ -21,9 +25,10 @@ public class ServerSocketService {
 		if (server != null) {
 			try {
 				server.close();
+				new AlertSuccess("Servidor interrompido");
 			} catch (IOException e) {
 				// Show message server
-				e.printStackTrace();
+				new AlertException("Falha ao encerrar o servidor");
 			}
 		}
 	}
@@ -31,12 +36,23 @@ public class ServerSocketService {
 	/**
 	 * Start server
 	 */
-	public static void start() {
-		int port;
-		BufferedReader input;
+	public static void start(String portString) {
 
-		System.out.println("port = 1500 (default)");
-		port = 3322;
+		// check if server is running
+		if (server != null && !server.isClosed()) {
+			throw new IllegalStateException();
+		}
+
+		// Check port is number
+		if (!portString.isEmpty() && !StringUtils.isNumeric(portString)) {
+			throw new IllegalArgumentException();
+		}
+
+		// Start server
+		int port;
+		port = portString.isEmpty() ? 3322 : Integer.parseInt(portString);
+
+		BufferedReader input;
 
 		try {
 
@@ -49,8 +65,8 @@ public class ServerSocketService {
 				System.out.println("New connection accepted " + socket.getInetAddress() + ":" + socket.getPort());
 				input = new BufferedReader(new InputStreamReader(socket.getInputStream()));
 				PrintWriter output = new PrintWriter(socket.getOutputStream(), true);
-				
-				//start listener message
+
+				// start listener message
 				try {
 					while (true) {
 						String message = input.readLine();
@@ -64,14 +80,14 @@ public class ServerSocketService {
 					}
 				} catch (IOException e) {
 					System.out.println(e);
-					//Tratar exceção
+					// Tratar exceção
 				}
 
 				try {
 					socket.close();
 					System.out.println("Connection closed by client");
 				} catch (IOException e) {
-					//Tratar
+					// Tratar
 					System.out.println(e);
 				}
 
