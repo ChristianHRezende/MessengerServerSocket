@@ -25,10 +25,10 @@ public class ServerSocketService {
 		if (server != null) {
 			try {
 				server.close();
-				new AlertSuccess("Servidor interrompido");
+				new AlertSuccess("Server stopped");
 			} catch (IOException e) {
 				// Show message server
-				new AlertException("Falha ao encerrar o servidor");
+				new AlertException("Failed on stop server");
 			}
 		}
 	}
@@ -36,7 +36,7 @@ public class ServerSocketService {
 	/**
 	 * Start server
 	 */
-	public static void start(String portString) {
+	public static Integer start(String portString) {
 
 		// check if server is running
 		if (server != null && !server.isClosed()) {
@@ -52,52 +52,57 @@ public class ServerSocketService {
 		int port;
 		port = portString.isEmpty() ? 3322 : Integer.parseInt(portString);
 
-		BufferedReader input;
-
 		try {
 
 			server = new ServerSocket(port);
 			System.out.println("Server waiting for client on port " + server.getLocalPort());
+			new Thread(() -> {
+				BufferedReader input;
+				// server infinite loop
+				while (!server.isClosed()) {
+					try {
+						Socket socket = server.accept();
+						System.out
+								.println("New connection accepted " + socket.getInetAddress() + ":" + socket.getPort());
+						input = new BufferedReader(new InputStreamReader(socket.getInputStream()));
+						PrintWriter output = new PrintWriter(socket.getOutputStream(), true);
 
-			// server infinite loop
-			while (true) {
-				Socket socket = server.accept();
-				System.out.println("New connection accepted " + socket.getInetAddress() + ":" + socket.getPort());
-				input = new BufferedReader(new InputStreamReader(socket.getInputStream()));
-				PrintWriter output = new PrintWriter(socket.getOutputStream(), true);
+						// start listener message
+						try {
+							while (true) {
+								String message = input.readLine();
+								if (message == null)
+									break;
+								if (message == "")
+									break;
+								System.out.println(message);
+								getClientMessage(message);
+								sendMessageToClient("success", output);
+							}
+						} catch (IOException e) {
+							sendMessageToClient("fail", output);
+						}
 
-				// start listener message
-				try {
-					while (true) {
-						String message = input.readLine();
-						if (message == null)
-							break;
-						if (message == "")
-							break;
-						System.out.println(message);
-						getClientMessage(message);
-						sendMessageToClient("Recebemos sua msg", output);
+						try {
+							socket.close();
+						} catch (IOException e) {
+							System.out.println(e);
+						}
+					} catch (IOException e) {
+						// TODO: handle exception
+						System.out.println(e);
 					}
-				} catch (IOException e) {
-					System.out.println(e);
-					// Tratar exceção
+
 				}
 
-				try {
-					socket.close();
-					System.out.println("Connection closed by client");
-				} catch (IOException e) {
-					// Tratar
-					System.out.println(e);
-				}
-
-			}
+			}).start();
 
 		}
 
 		catch (IOException e) {
 			System.out.println(e);
 		}
+		return port;
 	}
 
 	/**

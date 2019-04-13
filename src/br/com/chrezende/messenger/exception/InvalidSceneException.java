@@ -1,4 +1,4 @@
-package br.com.chrezende.messenger.exceptions;
+package br.com.chrezende.messenger.exception;
 
 import java.io.Serializable;
 

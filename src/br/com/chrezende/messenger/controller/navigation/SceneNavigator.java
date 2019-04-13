@@ -4,7 +4,7 @@ import java.io.IOException;
 import java.util.HashMap;
 import java.util.Map;
 
-import br.com.chrezende.messenger.exceptions.InvalidSceneException;
+import br.com.chrezende.messenger.exception.InvalidSceneException;
 import javafx.fxml.FXMLLoader;
 import javafx.scene.Scene;
 import javafx.scene.layout.Pane;
