@@ -17,7 +17,7 @@ import javafx.scene.text.Text;
 
 public class HomeController implements Initializable {
 
-	private Boolean statusServer = false;
+	private static Boolean statusServer = false;
 
 	@FXML
 	private Button startServerButton;
@@ -34,8 +34,15 @@ public class HomeController implements Initializable {
 	@FXML
 	private Text serverPortText;
 
+	private static Text refStatusServerText;
+
+	private static Text refServerPortText;
+
 	@Override
 	public void initialize(URL location, ResourceBundle resources) {
+		//initialize info status text fx
+		HomeController.refServerPortText = serverPortText;
+		HomeController.refStatusServerText = statusServerText;
 	}
 
 	@FXML
@@ -46,24 +53,33 @@ public class HomeController implements Initializable {
 
 	@FXML
 	void stopServerButtonHandler(ActionEvent event) {
+		//Stop server
 		ServerSocketService.stop();
 		changeServerStatus(null);
 	}
 
-	protected void changeServerStatus(Integer port) {
-		//Change status text
+	/**
+	 * Change status info text fx
+	 * @param port
+	 */
+	public static void changeServerStatus(Integer port) {
+		// Change status text
 		statusServer = !statusServer;
-		statusServerText.setText("Status: " + (statusServer == true ? ServerStatusEnum.ONLINE.toString().toLowerCase()
-				: ServerStatusEnum.OFFLINE.toString().toLowerCase()));
-		
-		//Change Port number
+		refStatusServerText
+				.setText("Status: " + (statusServer == true ? ServerStatusEnum.ONLINE.toString().toLowerCase()
+						: ServerStatusEnum.OFFLINE.toString().toLowerCase()));
+
+		// Change Port number
 		if (port != null && port > 0) {
-			serverPortText.setText("Port: " + port + "");
+			refServerPortText.setText("Port: " + port + "");
 		} else {
-			serverPortText.setText("Port: " + PortServerEnum.NONE.toString().toLowerCase());
+			refServerPortText.setText("Port: " + PortServerEnum.NONE.toString().toLowerCase());
 		}
 	}
 
+	/**
+	 * Start server socket service task
+	 */
 	private void startServerTask() {
 		Task startServerTask = new Task() {
 
@@ -72,12 +88,15 @@ public class HomeController implements Initializable {
 			 */
 			@Override
 			protected Integer call() throws Exception {
-				return ServerSocketService.start(startServerTextArea.getText());
+				//Start
+				ServerSocketService.start(startServerTextArea.getText());
+				return 1;
 			}
 
 			@Override
 			protected void succeeded() {
 				super.succeeded();
+				//When complete change status info
 				changeServerStatus((Integer) getValue());
 			}
 
@@ -97,7 +116,8 @@ public class HomeController implements Initializable {
 
 			}
 		};
-		// Start thread
+		
+		// Start thread service
 		Thread t = new Thread(startServerTask);
 		t.setDaemon(true);
 		t.start();

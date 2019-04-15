@@ -9,11 +9,11 @@
 
 <VBox xmlns="http://javafx.com/javafx/8.0.201"
 	xmlns:fx="http://javafx.com/fxml/1"
-	fx:controller="br.com.chrezende.messenger.controller.message.MessageListController">
+	fx:controller="br.com.chrezende.messenger.controller.client.ClientListController">
 	<children>
 		<AnchorPane>
 			<children>
-				<Label layoutY="5.0" text="Messages:">
+				<Label layoutY="5.0" text="Clients:">
 					<padding>
 						<Insets bottom="10.0" left="10.0" right="10.0" top="10.0" />
 					</padding>
@@ -27,6 +27,7 @@
 				</Button>
 			</children>
 		</AnchorPane>
-		<ListView fx:id="messageList" />
+		<ListView fx:id="clientList"
+			onMouseClicked="#itemListClickHandler" />
 	</children>
 </VBox>

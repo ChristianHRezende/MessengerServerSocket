@@ -1,22 +1,25 @@
 package br.com.chrezende.messenger.socket.service;
 
-import java.io.BufferedReader;
 import java.io.IOException;
-import java.io.InputStreamReader;
-import java.io.PrintWriter;
 import java.net.ServerSocket;
 import java.net.Socket;
-import java.time.LocalDateTime;
+import java.util.ArrayList;
+import java.util.List;
 
 import org.apache.commons.lang3.StringUtils;
 
+import br.com.chrezende.messenger.controller.HomeController;
 import br.com.chrezende.messenger.controller.alert.AlertException;
 import br.com.chrezende.messenger.controller.alert.AlertSuccess;
-import br.com.chrezende.messenger.model.entity.Message;
+import br.com.chrezende.messenger.controller.client.ClientListController;
+import br.com.chrezende.messenger.controller.message.MessageListController;
+import br.com.chrezende.messenger.db.DbService;
+import javafx.application.Platform;
 
 public class ServerSocketService {
 
 	private static ServerSocket server;
+	private static List<SocketThread> socketList = new ArrayList<SocketThread>();
 
 	/**
 	 * Stop server
@@ -25,6 +28,7 @@ public class ServerSocketService {
 		if (server != null) {
 			try {
 				server.close();
+				HomeController.changeServerStatus(null);
 				new AlertSuccess("Server stopped");
 			} catch (IOException e) {
 				// Show message server
@@ -36,7 +40,7 @@ public class ServerSocketService {
 	/**
 	 * Start server
 	 */
-	public static Integer start(String portString) {
+	public static void start(String portString) {
 
 		// check if server is running
 		if (server != null && !server.isClosed()) {
@@ -52,85 +56,61 @@ public class ServerSocketService {
 		int port;
 		port = portString.isEmpty() ? 3322 : Integer.parseInt(portString);
 
+		Socket socket = null;
 		try {
-
+			//Start server and change status
 			server = new ServerSocket(port);
-			System.out.println("Server waiting for client on port " + server.getLocalPort());
-			new Thread(() -> {
-				BufferedReader input;
-				// server infinite loop
-				while (!server.isClosed()) {
-					try {
-						Socket socket = server.accept();
-						System.out
-								.println("New connection accepted " + socket.getInetAddress() + ":" + socket.getPort());
-						input = new BufferedReader(new InputStreamReader(socket.getInputStream()));
-						PrintWriter output = new PrintWriter(socket.getOutputStream(), true);
+			HomeController.changeServerStatus(port);
 
-						// start listener message
-						try {
-							while (true) {
-								String message = input.readLine();
-								if (message == null)
-									break;
-								if (message == "")
-									break;
-								System.out.println(message);
-								getClientMessage(message);
-								sendMessageToClient("success", output);
-							}
-						} catch (IOException e) {
-							sendMessageToClient("fail", output);
-						}
-
-						try {
-							socket.close();
-						} catch (IOException e) {
-							System.out.println(e);
-						}
-					} catch (IOException e) {
-						// TODO: handle exception
-						System.out.println(e);
-					}
-
-				}
-
-			}).start();
-
+		} catch (IOException e) {
+			//stop server
+			stop();
 		}
 
-		catch (IOException e) {
-			System.out.println(e);
+		//Start listener sockets
+		while (!server.isClosed()) {
+			try {
+				// Check new connection socket
+				socket = server.accept();
+
+				// Start thread of socket
+				SocketThread thread = new SocketThread(server, socket);
+				thread.start();
+
+				// Add to list threads
+				socketList.add(thread);
+			} catch (IOException e) {
+				// Server is closed
+				//Interrupt all threads
+				socketList.forEach((thread) -> Thread.interrupted());
+
+				// Remove all users connected
+				DbService.clearDb();
+
+				// Load Content lists
+				loadLists();
+			}
 		}
-		return port;
+
 	}
 
 	/**
-	 * Get Response and add to list
-	 * 
-	 * @param entrada
+	 * Refresh lists whem receive messages
 	 */
-	private static Message getClientMessage(String in) {
+	private static void loadLists() {
+		// Run JavaFX load lists
+		Platform.runLater(new Runnable() {
 
-		System.out.println(in);
+			@Override
+			public void run() {
+				// LoadClientList
+				ClientListController.refreshList();
 
-		// Get current date time
-		LocalDateTime dateTime = LocalDateTime.now();
+				// LoadMessages
+				MessageListController.refreshList();
+			}
+		});
 
-		// Get last id and add 1
-		Long _id = dateTime.getLong(null);
-		System.out.println("id = " + _id);
-
-		// cliente#!@message
-		String client = in.split("#!@")[0];
-		String message = in.split("#!@")[1];
-
-		return new Message(_id, client, dateTime, message);
-	}
-
-	private static void sendMessageToClient(String message, PrintWriter output) throws IOException {
-		String message2 = message + " response sent...";
-		output.println(message2);
 	}
 
 }

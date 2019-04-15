@@ -7,6 +7,7 @@ public class AlertException {
 
 	public AlertException(String errorMessage) {
 
+		//Show alert for exception control
 		Alert alert = new Alert(AlertType.INFORMATION);
 		alert.setTitle("Alert");
 		alert.setHeaderText(null);

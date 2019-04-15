@@ -1,6 +1,7 @@
 package br.com.chrezende.messenger.model.entity;
 
 import java.time.LocalDateTime;
+import java.time.format.DateTimeFormatter;
 
 public class Message {
 
@@ -47,6 +48,16 @@ public class Message {
 
 	public void setMessage(String message) {
 		this.message = message;
+	}
+
+	@Override
+	public String toString() {
+
+		DateTimeFormatter formatter = DateTimeFormatter.ofPattern("dd/MM/yyyy HH:mm:ss");
+
+		String formatedDateTime = dateTime.format(formatter);
+
+		return formatedDateTime + " : " + message;
 	}
 
 }
